@@ -9,9 +9,7 @@ public interface PlayerDAO {
 
     List<Player> getAllPlayers(Map<String, String> params);
 
-    void savePlayer(Player player);
-
-    Player updatePlayer(long id);
+    Player createPlayer(Player player);
 
     Player getPlayerById(long id);
 

@@ -1,7 +1,7 @@
 package com.game.entity;
 
-import org.springframework.lang.NonNull;
-import org.springframework.validation.annotation.Validated;
+import org.hibernate.annotations.DynamicUpdate;
+
 
 import javax.persistence.*;
 import java.util.Date;
@@ -9,14 +9,16 @@ import java.util.Date;
 
 @Entity
 @Table(name = "player")
+@DynamicUpdate
 public class Player {
+
+
 
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @NonNull
     @Column(name = "name")
     private String name;
 
@@ -24,25 +26,28 @@ public class Player {
     private String title;
 
     @Column(name = "race")
+    @Enumerated(EnumType.STRING)
     private Race race;
 
     @Column(name = "profession")
+    @Enumerated(EnumType.STRING)
     private Profession profession;
 
     @Column(name = "experience")
-    private int experience;
+    private Integer experience;
 
     @Column(name = "level")
-    private int level;
+    private Integer level;
 
-    @Column(name = "unitNextLevel")
-    private int unitNextLevel;
+    @Column(name = "untilNextLevel")
+    private Integer unitNextLevel;
 
     @Column(name = "birthday")
+    @Temporal(TemporalType.DATE)
     private Date birthday;
 
     @Column(name = "banned")
-    private boolean banned;
+    private Boolean banned;
 
 
     public Player() {
@@ -100,7 +105,7 @@ public class Player {
         this.profession = profession;
     }
 
-    public int getExperience() {
+    public Integer getExperience() {
         return experience;
     }
 
@@ -108,7 +113,7 @@ public class Player {
         this.experience = experience;
     }
 
-    public int getLevel() {
+    public Integer getLevel() {
         return level;
     }
 
@@ -116,7 +121,7 @@ public class Player {
         this.level = level;
     }
 
-    public int getUnitNextLevel() {
+    public Integer getUnitNextLevel() {
         return unitNextLevel;
     }
 
@@ -132,7 +137,7 @@ public class Player {
         this.birthday = birthday;
     }
 
-    public boolean isBanned() {
+    public Boolean isBanned() {
         return banned;
     }
 

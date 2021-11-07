@@ -9,9 +9,9 @@ public interface PlayerService {
 
     List<Player> getAllPlayers(Map<String, String> params);
 
-    Player savePlayer(Player player);
+    Player createPlayer(Player player);
 
-    void updatePlayer(long id, Player player);
+    Player updatePlayer(long id, Player player);
 
     Player getPlayerById(long id);
 

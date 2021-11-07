@@ -4,7 +4,6 @@ package com.game.controller;
 import com.game.entity.Player;
 import com.game.service.PlayerService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 
 import org.springframework.web.bind.annotation.*;
 
@@ -20,9 +19,8 @@ public class Controller {
     @Autowired
     private PlayerService playerService;
 
-    @GetMapping(name = "/players", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping("/players")
     public List<Player> getAllPlayers(@PathVariable(required = false) Map<String, String> params){
-
         return playerService.getAllPlayers(params);
     }
 
@@ -34,8 +32,13 @@ public class Controller {
 
     @PostMapping("/players")
     public Player createPlayer(@RequestBody Player player){
-        playerService.savePlayer(player);
+        playerService.createPlayer(player);
         return playerService.getPlayerById(player.getId());
+    }
+
+    @PostMapping("/players/{id}")
+    public Player updatePlayer(@PathVariable long id, @RequestBody(required = false) Player player){
+        return playerService.updatePlayer(id, player);
     }
 
     @GetMapping("/players/{id}")
@@ -43,15 +46,10 @@ public class Controller {
         return playerService.getPlayerById(id);
     }
 
-    @PostMapping("/players/{id}")
-    public Player updatePlayer(@PathVariable long id, @RequestBody(required = false) Player player){
-        playerService.updatePlayer(id, player);
-        return playerService.getPlayerById(id);
-    }
-
     @DeleteMapping("/players/{id}")
-    public void deletePlayer(@RequestParam long id){
+    public void deletePlayer(@PathVariable long id){
         playerService.deletePlayer(id);
+
     }
 
 }

@@ -1,15 +1,17 @@
 package com.game.repository;
 
 import com.game.entity.Player;
-import com.game.exception_handler.NoSuchPlayerException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+
 import java.util.List;
 import java.util.Map;
 
@@ -22,19 +24,20 @@ public class PlayerDAOImpl implements PlayerDAO{
     @Override
     @Transactional
     public List<Player> getAllPlayers(Map<String, String> params) {
-        return null;
+        List<Player> responseList = entityManager.createQuery("from Player", Player.class).getResultList();
+//        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+//        CriteriaQuery<Player> criteriaQuery = criteriaBuilder.createQuery(Player.class);
+//        Root<Player> player = criteriaQuery.from(Player.class);
+        //todo доделать Criteria
+
+        return responseList;
     }
 
     @Override
     @Transactional
-    public void savePlayer(Player player) {
+    public Player createPlayer(Player player) {
         entityManager.merge(player);
-    }
-
-    @Override
-    @Transactional
-    public Player updatePlayer(long id) {
-        return null;
+        return entityManager.find(Player.class, player.getId());
     }
 
     @Override

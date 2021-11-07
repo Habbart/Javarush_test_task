@@ -1,6 +1,9 @@
 package com.game.service;
 
+import com.game.controller.PlayerOrder;
 import com.game.entity.Player;
+import com.game.entity.Profession;
+import com.game.entity.Race;
 import com.game.exception_handler.IncorrectPlayerArguments;
 import com.game.exception_handler.NoSuchPlayerException;
 import com.game.repository.PlayerDAO;
@@ -9,9 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.PersistenceContext;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @Service
 @PersistenceContext
@@ -22,25 +26,168 @@ public class PlayerServiceImpl implements PlayerService{
 
     @Override
     public List<Player> getAllPlayers(Map<String, String> params) {
-        return null;
+        List<Player> allPlayersList = playerDAO.getAllPlayers(params);
+        //парсим параметры из входящей мапы
+//        String name = params.get("name");
+//        String title = params.get("title");
+//        String raceParam , professionParam, afterParam, beforeParam, minExperienceParam, maxExperienceParam, minLevelParam, maxLevelParam, playerOrderParam;
+//        String pageNumberParam, pageSizeParam;
+//        raceParam = params.get("race");
+//        if(params.containsKey("race")){
+//
+//        }
+//        Race race = null;
+//        Profession profession = null;
+//        Date after = null;
+//        Date before = null;
+//        Integer minExperience = null;
+//        Integer maxExperience = null;
+//        if(raceParam != null) race = Race.valueOf(raceParam);
+//        professionParam = params.get("profession");
+//        if(professionParam != null) profession = Profession.valueOf(professionParam);
+//        afterParam = params.get("after");
+//        if(afterParam != null) after = new Date(Long.parseLong(afterParam));
+//        beforeParam = params.get("before");
+//        if(beforeParam != null) before = new Date(Long.parseLong(beforeParam));
+//        minExperienceParam = params.get("minExperience");
+//        if(minExperienceParam != null) minExperience = Integer.valueOf(minExperienceParam);
+//        maxExperienceParam = params.get(maxExperience);
+//        if(maxExperienceParam != null) maxExperience = Integer.valueOf(maxExperienceParam);
+//        Integer minLevel = Integer.valueOf(params.get("minLevel"));
+//        Integer maxLevel = Integer.valueOf(params.get("maxLevel"));
+//        PlayerOrder playerOrder = PlayerOrder.valueOf(params.get("order"));
+//        Integer pageNumber = Integer.valueOf(params.get("pageNumber"));
+//        Integer pageSize = Integer.valueOf(params.get("pageSize"));
+
+        //создаем предикаты в соответствии с переданными параметрами
+        List<Predicate<Player>> allFiltersPredicate = new ArrayList<>();
+
+        Predicate<Player> namePredicate = s -> {
+            if(!params.containsKey("name")) return true;
+            return s.getName().contains(params.get("name"));
+        };
+
+        Predicate<Player> titlePredicate = s -> {
+            if(!params.containsKey("title")) return true;
+            return s.getTitle().contains(params.get("title"));
+        };
+
+        Predicate<Player> racePredicate = s -> {
+            if(!params.containsKey("race")) return true;
+            return s.getRace().equals(Race.valueOf(params.get("race")));
+        };
+        Predicate<Player> professionPredicate = s -> {
+            if(!params.containsKey("profession")) return true;
+            return s.getProfession().equals(Profession.valueOf(params.get("profession")));
+        };
+        Predicate<Player> afterPredicate = s -> {
+            if(!params.containsKey("after")) return true;
+            return s.getBirthday().after(new Date(Long.parseLong(params.get("after"))));
+        };
+        Predicate<Player> beforePredicate = s -> {
+            if(!params.containsKey("before")) return true;
+            return s.getBirthday().before(new Date(Long.parseLong(params.get("before"))));
+        };
+        Predicate<Player> minExperiencePredicate = s -> {
+            if(!params.containsKey("minExperience")) return true;
+            return s.getExperience() >= Integer.parseInt(params.get("minExperience"));
+        };
+        Predicate<Player> maxExperiencePredicate = s -> {
+            if(!params.containsKey("maxExperience")) return true;
+            return s.getExperience() <= Integer.parseInt(params.get("maxExperience"));
+        };
+        Predicate<Player> minLevelPredicate = s -> {
+            if(!params.containsKey("minLevel")) return true;
+            return s.getLevel() >= Integer.parseInt(params.get("minLevel"));
+        };
+        Predicate<Player> maxLevelPredicate = s -> {
+            if(!params.containsKey("maxLevel")) return true;
+            return s.getLevel() <= Integer.parseInt(params.get("maxLevel"));
+        };
+        //фильтруем лист в соответствии с предикатами
+        allPlayersList = allPlayersList.stream()
+                .filter(namePredicate)
+                .filter(titlePredicate)
+                .filter(racePredicate)
+                .filter(professionPredicate)
+                .filter(afterPredicate)
+                .filter(beforePredicate)
+                .filter(minExperiencePredicate)
+                .filter(maxExperiencePredicate)
+                .filter(minExperiencePredicate)
+                .filter(minLevelPredicate)
+                .filter(maxLevelPredicate).collect(Collectors.toList());
+
+        //проверяем в каком порядке должен быть отсрортирован лист
+        Function<List<Player>, List<Player>> sortForList = s -> {
+            if(!params.containsKey("playerOrder")) {
+                return s.stream().sorted((x, y) -> (Long.compare(x.getId(), y.getId()))).collect(Collectors.toList());
+            } else {
+                PlayerOrder playerOrder = PlayerOrder.valueOf(params.get("playerOrder"));
+                switch (playerOrder) {
+                    case NAME:
+                        return s.stream().sorted((x, y) -> (x.getName().compareTo(y.getName()))).collect(Collectors.toList());
+                    case LEVEL:
+                        return s.stream().sorted((x, y) -> (Integer.compare(x.getLevel(), y.getLevel()))).collect(Collectors.toList());
+                    case BIRTHDAY:
+                        return s.stream().sorted((x, y) -> (x.getBirthday().compareTo(y.getBirthday()))).collect(Collectors.toList());
+                    case EXPERIENCE:
+                        return s.stream().sorted((x, y) -> (Integer.compare(x.getExperience(), y.getExperience()))).collect(Collectors.toList());
+
+                }
+            }
+            return null;
+        };
+        allPlayersList = sortForList.apply(allPlayersList);
+        for (Player player:
+             allPlayersList) {
+            System.out.print(player.getName() + " ");
+        }
+        return allPlayersList;
+        //todo доделать фильтрацию по страницам
+//        if(!params.containsKey("pageSize")){
+//            System.out.println("зашли в иф нет PageSize");
+//            if(!params.containsKey("pageNumber")) {
+//                System.out.println("зашли в иф нет PageNumber");
+//                return allPlayersList.subList(0, 3);
+//            } else {
+//                Integer pageNumber = Integer.valueOf(params.get("pageNumber"));
+//                return allPlayersList.subList(pageNumber * 3, pageNumber * 3 + 3);
+//            }
+//
+//        } else {
+//            Integer pageSize = Integer.valueOf(params.get("pageSize"));
+//            System.out.println("зашли в елсе");
+//            if(!params.containsKey("pageNumber")) {
+//                return allPlayersList.subList(0, pageSize);
+//            } else {
+//                System.out.println("зашли в есле 2");
+//                Integer pageNumber = Integer.valueOf(params.get("pageNumber"));
+//                return allPlayersList.subList(pageNumber * pageSize, pageNumber * pageSize + pageSize);
+//            }
+//        }
+    }
+
+
+
+    @Override
+    public Player createPlayer(Player player) {
+        if(!isPlayerValid(player)) {
+            throw new IncorrectPlayerArguments();
+        }
+        calculateLevelAndUntilNextLevel(player);
+        return playerDAO.createPlayer(player);
     }
 
     @Override
-    public Player savePlayer(Player player) {
-        //проверяем валидность данных
-        if(!isPlayerValid(player)) throw new IncorrectPlayerArguments();
-        //высчитываем уровень и количество опыта до следующего уровня
-        int exp = player.getExperience();
-        int level = (int)(Math.sqrt(2500+200*exp) - 50)/100;
-        player.setLevel(level);
-        player.setUnitNextLevel(50*(level+ 1) * (level + 2) - exp);
-        playerDAO.savePlayer(player);
-        return player;
-    }
-
-    @Override
-    public void updatePlayer(long id, Player player) {
-        playerDAO.updatePlayer(id);
+    public Player updatePlayer(long id, Player player) {
+        if(id < 0) throw new IncorrectPlayerArguments();
+        player.setId(id);
+        Player playerFromDB = playerDAO.getPlayerById(id);
+        if(playerFromDB == null) throw new NoSuchPlayerException();
+        Player playerForUpdate = mergePlayers(player, playerFromDB);
+        calculateLevelAndUntilNextLevel(playerForUpdate);
+        return playerDAO.createPlayer(playerForUpdate);
     }
 
     @Override
@@ -53,16 +200,63 @@ public class PlayerServiceImpl implements PlayerService{
         if(getPlayerById(id) == null){
             throw new NoSuchPlayerException();
         }
+        if(id < 0){
+            throw new IncorrectPlayerArguments();
+        }
         playerDAO.deletePlayer(id);
     }
 
 
     private boolean isPlayerValid(Player player){
-        if(player.getName().length() > 12) return false;
-        if(player.getTitle().length() > 30) return false;
-        if(player.getName().length() == 0 || player.getName() == "" || player.getName() == null) return false;
-        if(player.getExperience() <0 || player.getExperience() > 10_000_000L) return false;
-        if(player.getBirthday().before(new Date(1 / 2000)) || player.getBirthday().after(new Date(1 / 3999))) return false;
+        if(player.getName() == null || player.getName().length() > 12) {
+            return false;
+        }
+        if(player.getTitle()== null || player.getTitle().length() > 30) {
+            return false;
+        }
+        if(player.getName().length() == 0 || player.getName() == "") {
+            return false;
+        }
+        if(player.getProfession() == null) {
+            return false;
+        }
+        if(player.getRace() == null) {
+            return false;
+        }
+
+        if( player.getExperience() <0 || player.getExperience() > 10_000_000L) {
+            return false;
+        }
+        Date playerBirthday = player.getBirthday();
+        if(playerBirthday == null) return false;
+        Date afterDate = new Date(1100, 01 ,01);
+        Date beforeDate = new Date(100, 01 ,01);
+        if(playerBirthday.after(afterDate) || playerBirthday.before(beforeDate))  {
+            return false;
+        }
         return true;
     }
+    private Player mergePlayers(Player playerFromJSON, Player playerFromDB){
+        Player resultPlayer = new Player();
+        resultPlayer.setId(playerFromJSON.getId());
+        resultPlayer.setName(playerFromJSON.getName() == null? playerFromDB.getName() : playerFromJSON.getName());
+        resultPlayer.setTitle(playerFromJSON.getTitle() == null? playerFromDB.getTitle() : playerFromJSON.getTitle());
+        resultPlayer.setRace(playerFromJSON.getRace() == null? playerFromDB.getRace() : playerFromJSON.getRace());
+        resultPlayer.setProfession(playerFromJSON.getProfession() == null? playerFromDB.getProfession() : playerFromJSON.getProfession());
+        resultPlayer.setBirthday(playerFromJSON.getBirthday() == null? playerFromDB.getBirthday() : playerFromJSON.getBirthday());
+        resultPlayer.setBanned(playerFromJSON.isBanned() == null? playerFromDB.isBanned() : playerFromJSON.isBanned());
+        resultPlayer.setExperience(playerFromJSON.getExperience() == null? playerFromDB.getExperience() : playerFromJSON.getExperience());
+        return resultPlayer;
+    }
+
+    private void calculateLevelAndUntilNextLevel(Player player){
+        int exp = player.getExperience();
+        int level = (int)(Math.sqrt(2500+200*exp) - 50)/100;
+        player.setLevel(level);
+        player.setUnitNextLevel(50*(level+ 1) * (level + 2) - exp);
+    }
+
+
+
+
 }
