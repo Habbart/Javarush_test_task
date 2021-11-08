@@ -17,6 +17,5 @@ public interface PlayerService {
 
     void deletePlayer(long id);
 
-
-
+    int getCountOfPlayers(Map<String, String> params);
 }

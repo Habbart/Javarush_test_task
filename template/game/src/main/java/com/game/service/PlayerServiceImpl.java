@@ -27,6 +27,7 @@ public class PlayerServiceImpl implements PlayerService{
     @Override
     public List<Player> getAllPlayers(Map<String, String> params) {
         List<Player> allPlayersList = playerDAO.getAllPlayers(params);
+
         //парсим параметры из входящей мапы
 //        String name = params.get("name");
 //        String title = params.get("title");
@@ -60,15 +61,15 @@ public class PlayerServiceImpl implements PlayerService{
 //        Integer pageSize = Integer.valueOf(params.get("pageSize"));
 
         //создаем предикаты в соответствии с переданными параметрами
-        List<Predicate<Player>> allFiltersPredicate = new ArrayList<>();
 
+        params.entrySet().forEach(System.out::println);
         Predicate<Player> namePredicate = s -> {
-            if(!params.containsKey("name")) return true;
+            if(!params.containsKey("name") || params.get("name") == "") return true;
             return s.getName().contains(params.get("name"));
         };
 
         Predicate<Player> titlePredicate = s -> {
-            if(!params.containsKey("title")) return true;
+            if(!params.containsKey("title") || params.get("title") == "") return true;
             return s.getTitle().contains(params.get("title"));
         };
 
@@ -81,28 +82,32 @@ public class PlayerServiceImpl implements PlayerService{
             return s.getProfession().equals(Profession.valueOf(params.get("profession")));
         };
         Predicate<Player> afterPredicate = s -> {
-            if(!params.containsKey("after")) return true;
+            if(!params.containsKey("after") || params.get("after") == "") return true;
             return s.getBirthday().after(new Date(Long.parseLong(params.get("after"))));
         };
         Predicate<Player> beforePredicate = s -> {
-            if(!params.containsKey("before")) return true;
+            if(!params.containsKey("before") || params.get("before") == "") return true;
             return s.getBirthday().before(new Date(Long.parseLong(params.get("before"))));
         };
         Predicate<Player> minExperiencePredicate = s -> {
-            if(!params.containsKey("minExperience")) return true;
+            if(!params.containsKey("minExperience") || params.get("minExperience") == "") return true;
             return s.getExperience() >= Integer.parseInt(params.get("minExperience"));
         };
         Predicate<Player> maxExperiencePredicate = s -> {
-            if(!params.containsKey("maxExperience")) return true;
+            if(!params.containsKey("maxExperience") || params.get("maxExperience") == "") return true;
             return s.getExperience() <= Integer.parseInt(params.get("maxExperience"));
         };
         Predicate<Player> minLevelPredicate = s -> {
-            if(!params.containsKey("minLevel")) return true;
+            if(!params.containsKey("minLevel") || params.get("minLevel") == "") return true;
             return s.getLevel() >= Integer.parseInt(params.get("minLevel"));
         };
         Predicate<Player> maxLevelPredicate = s -> {
-            if(!params.containsKey("maxLevel")) return true;
+            if(!params.containsKey("maxLevel") || params.get("maxLevel") == "") return true;
             return s.getLevel() <= Integer.parseInt(params.get("maxLevel"));
+        };
+        Predicate<Player> bannedPredicate = s -> {
+            if(!params.containsKey("banned")) return true;
+            return s.isBanned();
         };
         //фильтруем лист в соответствии с предикатами
         allPlayersList = allPlayersList.stream()
@@ -116,14 +121,18 @@ public class PlayerServiceImpl implements PlayerService{
                 .filter(maxExperiencePredicate)
                 .filter(minExperiencePredicate)
                 .filter(minLevelPredicate)
-                .filter(maxLevelPredicate).collect(Collectors.toList());
+                .filter(maxLevelPredicate)
+                .filter(bannedPredicate).
+                collect(Collectors.toList());
 
         //проверяем в каком порядке должен быть отсрортирован лист
         Function<List<Player>, List<Player>> sortForList = s -> {
-            if(!params.containsKey("playerOrder")) {
+            System.out.println(params.get("order"));
+            if(!params.containsKey("order")) {
                 return s.stream().sorted((x, y) -> (Long.compare(x.getId(), y.getId()))).collect(Collectors.toList());
             } else {
-                PlayerOrder playerOrder = PlayerOrder.valueOf(params.get("playerOrder"));
+                PlayerOrder playerOrder = PlayerOrder.valueOf(params.get("order"));
+                System.out.println(playerOrder);
                 switch (playerOrder) {
                     case NAME:
                         return s.stream().sorted((x, y) -> (x.getName().compareTo(y.getName()))).collect(Collectors.toList());
@@ -133,42 +142,54 @@ public class PlayerServiceImpl implements PlayerService{
                         return s.stream().sorted((x, y) -> (x.getBirthday().compareTo(y.getBirthday()))).collect(Collectors.toList());
                     case EXPERIENCE:
                         return s.stream().sorted((x, y) -> (Integer.compare(x.getExperience(), y.getExperience()))).collect(Collectors.toList());
-
+                    case ID:
+                        return s.stream().sorted((x, y) -> (Long.compare(x.getId(), y.getId()))).collect(Collectors.toList());
                 }
             }
-            return null;
+            return s;
         };
         allPlayersList = sortForList.apply(allPlayersList);
-        for (Player player:
-             allPlayersList) {
-            System.out.print(player.getName() + " ");
-        }
-        return allPlayersList;
+
+        printList(allPlayersList);
         //todo доделать фильтрацию по страницам
-//        if(!params.containsKey("pageSize")){
-//            System.out.println("зашли в иф нет PageSize");
-//            if(!params.containsKey("pageNumber")) {
-//                System.out.println("зашли в иф нет PageNumber");
-//                return allPlayersList.subList(0, 3);
-//            } else {
-//                Integer pageNumber = Integer.valueOf(params.get("pageNumber"));
-//                return allPlayersList.subList(pageNumber * 3, pageNumber * 3 + 3);
-//            }
-//
-//        } else {
-//            Integer pageSize = Integer.valueOf(params.get("pageSize"));
-//            System.out.println("зашли в елсе");
-//            if(!params.containsKey("pageNumber")) {
-//                return allPlayersList.subList(0, pageSize);
-//            } else {
-//                System.out.println("зашли в есле 2");
-//                Integer pageNumber = Integer.valueOf(params.get("pageNumber"));
-//                return allPlayersList.subList(pageNumber * pageSize, pageNumber * pageSize + pageSize);
-//            }
-//        }
+        if(!params.containsKey("pageSize")){
+            if(!params.containsKey("pageNumber")) {
+                allPlayersList = allPlayersList.subList(0, 3);
+                printList(allPlayersList);
+                return allPlayersList;
+            } else {
+                Integer pageNumber = Integer.valueOf(params.get("pageNumber"));
+                allPlayersList = allPlayersList.subList(pageNumber * 3, pageNumber * 3 + 3);
+                printList(allPlayersList);
+                return allPlayersList;
+            }
+
+        } else {
+            Integer pageSize = Integer.valueOf(params.get("pageSize"));
+            if(!params.containsKey("pageNumber")) {
+                allPlayersList = allPlayersList.subList(0, pageSize);
+                printList(allPlayersList);
+                return   allPlayersList;
+            } else {
+                Integer pageNumber = Integer.valueOf(params.get("pageNumber"));
+                allPlayersList = allPlayersList.subList(pageNumber * pageSize, pageNumber * pageSize + pageSize);
+                printList(allPlayersList);
+                return allPlayersList;
+            }
+        }
     }
 
 
+    private void printList(List<Player> list){
+        list.stream().map(s -> s.getName() + " ").forEach(System.out::print);
+        System.out.println();
+    }
+
+    @Override
+    public int getCountOfPlayers(Map<String, String> params) {
+
+        return getAllPlayers(params).size();
+    }
 
     @Override
     public Player createPlayer(Player player) {
@@ -253,7 +274,7 @@ public class PlayerServiceImpl implements PlayerService{
         int exp = player.getExperience();
         int level = (int)(Math.sqrt(2500+200*exp) - 50)/100;
         player.setLevel(level);
-        player.setUnitNextLevel(50*(level+ 1) * (level + 2) - exp);
+        player.setUntilNextLevel(50*(level+ 1) * (level + 2) - exp);
     }
 
 

@@ -40,7 +40,7 @@ public class Player {
     private Integer level;
 
     @Column(name = "untilNextLevel")
-    private Integer unitNextLevel;
+    private Integer untilNextLevel;
 
     @Column(name = "birthday")
     @Temporal(TemporalType.DATE)
@@ -60,7 +60,7 @@ public class Player {
         this.profession = profession;
         this.experience = experience;
         this.level = level;
-        this.unitNextLevel = unitNextLevel;
+        this.untilNextLevel = unitNextLevel;
         this.birthday = birthday;
         this.banned = banned;
     }
@@ -121,12 +121,12 @@ public class Player {
         this.level = level;
     }
 
-    public Integer getUnitNextLevel() {
-        return unitNextLevel;
+    public Integer getUntilNextLevel() {
+        return untilNextLevel;
     }
 
-    public void setUnitNextLevel(int unitNextLevel) {
-        this.unitNextLevel = unitNextLevel;
+    public void setUntilNextLevel(int untilNextLevel) {
+        this.untilNextLevel = untilNextLevel;
     }
 
     public Date getBirthday() {
