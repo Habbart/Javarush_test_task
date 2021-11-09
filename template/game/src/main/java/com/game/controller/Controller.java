@@ -23,13 +23,11 @@ public class Controller {
 
     @GetMapping("/players")
     public List<Player> getAllPlayers(@RequestParam(required = false) Map<String, String> params){
-        System.out.println(ServletUriComponentsBuilder.fromCurrentRequest().toUriString());
         return playerService.getAllPlayers(params);
     }
 
     @GetMapping("/players/count")
     public int getCountOfPlayers(@RequestParam(required = false) Map<String, String> params){
-
         return playerService.getCountOfPlayers(params);
     }
 

@@ -2,6 +2,8 @@ package com.game.repository;
 
 import com.game.entity.Player;
 
+import org.hibernate.Criteria;
+import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,14 +25,21 @@ public class PlayerDAOImpl implements PlayerDAO{
 
     @Override
     @Transactional
-    public List<Player> getAllPlayers(Map<String, String> params) {
-        List<Player> responseList = entityManager.createQuery("from Player", Player.class).getResultList();
-//        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-//        CriteriaQuery<Player> criteriaQuery = criteriaBuilder.createQuery(Player.class);
-//        Root<Player> player = criteriaQuery.from(Player.class);
-        //todo доделать Criteria
+    public List<Player> getAllPlayers(int pageNumber, int pageSize) {
+        Query query = entityManager.createQuery("From Player", Player.class);
+        query.setFirstResult((pageNumber-1) * pageSize);
+        query.setMaxResults(pageSize);
+        List <Player> playerList = query.getResultList();
 
-        return responseList;
+        return playerList;
+    }
+
+    @Override
+    @Transactional
+    public List<Player> getListPlayers() {
+        Query query = entityManager.createQuery("From Player", Player.class);
+        List <Player> playerList = query.getResultList();
+        return playerList;
     }
 
     @Override
