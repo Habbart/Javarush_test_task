@@ -31,28 +31,22 @@ public class PlayerServiceImpl implements PlayerService{
         //todo все еще доделать фильтрацию
         int pageNumber = 0;
         int pageSize = 3;
-        if(params.containsKey("pageNumber")){
-            System.out.println("pageNumber == " + pageNumber);
-            pageNumber = Integer.parseInt(params.get("pageNumber"));
-        }
-        if(params.containsKey("pageSize")){
-            pageSize = Integer.parseInt(params.get("pageSize"));
-            System.out.println("pageSize == " + pageSize);
-        }
-        List<Player> allPlayersList = playerDAO.getAllPlayers(pageNumber, pageSize);
+        List<Player> allPlayersList = playerDAO.getAllPlayers();
+        if(params == null) return allPlayersList.subList(0, 3);
+
+        System.out.println("метод гетАлл список до фильтрации");
         printList(allPlayersList);
         Predicate<Player> filter = filterByParams(params).stream().reduce(Predicate::and).orElse(x -> true);
         //фильтруем лист в соответствии с предикатами
         allPlayersList = allPlayersList.stream().filter(filter).collect(Collectors.toList());
-
+        System.out.println("метод гетАлл список после фильтрации до сортировки");
+        printList(allPlayersList);
         //проверяем в каком порядке должен быть отсрортирован лист
         Function<List<Player>, List<Player>> sortForList = s -> {
-//            System.out.println(params.get("order"));
             if(!params.containsKey("order")) {
                 return s.stream().sorted((x, y) -> (Long.compare(x.getId(), y.getId()))).collect(Collectors.toList());
             } else {
                 PlayerOrder playerOrder = PlayerOrder.valueOf(params.get("order"));
-                //System.out.println(playerOrder);
                 switch (playerOrder) {
                     case NAME:
                         return s.stream().sorted((x, y) -> (x.getName().compareTo(y.getName()))).collect(Collectors.toList());
@@ -69,13 +63,26 @@ public class PlayerServiceImpl implements PlayerService{
             return s;
         };
         allPlayersList = sortForList.apply(allPlayersList);
-
+        //System.out.println("метод гетАлл список после фильтрации и сортировки");
+        //printList(allPlayersList);
+        if(params.containsKey("pageNumber")){
+            pageNumber = Integer.parseInt(params.get("pageNumber"));
+        }
+        if(params.containsKey("pageSize")){
+            pageSize = Integer.parseInt(params.get("pageSize"));
+        }
+        int startOfSublist = pageNumber*pageSize;
+        int endOfSublist = (pageNumber*pageSize) + pageSize;
+        if(allPlayersList.size() < endOfSublist){
+            endOfSublist = startOfSublist + allPlayersList.size() - startOfSublist;
+        }
+        allPlayersList = allPlayersList.subList(startOfSublist, endOfSublist);
+        System.out.println("метод гетАлл список после Пагинации");
         printList(allPlayersList);
         return allPlayersList;
 
 
     }
-
 
     private void printList(List<Player> list){
         list.stream().map(s -> s.getName() + " ").forEach(System.out::print);
@@ -84,10 +91,10 @@ public class PlayerServiceImpl implements PlayerService{
 
     @Override
     public int getCountOfPlayers(Map<String, String> params) {
-        List<Player> allPlayersList = playerDAO.getListPlayers();
+        if (params == null) return playerDAO.getAllPlayers().size();
+        List<Player> allPlayersList = playerDAO.getAllPlayers();
         Predicate<Player> filter = filterByParams(params).stream().reduce(Predicate::and).orElse(x -> true);
         allPlayersList = allPlayersList.stream().filter(filter).collect(Collectors.toList());
-
         return allPlayersList.size();
     }
 
@@ -102,7 +109,7 @@ public class PlayerServiceImpl implements PlayerService{
 
     @Override
     public Player updatePlayer(long id, Player player) {
-        if(id < 0) throw new IncorrectPlayerArguments();
+        if(id <= 0) throw new IncorrectPlayerArguments();
         player.setId(id);
         Player playerFromDB = playerDAO.getPlayerById(id);
         if(playerFromDB == null) throw new NoSuchPlayerException();
@@ -121,7 +128,7 @@ public class PlayerServiceImpl implements PlayerService{
         if(getPlayerById(id) == null){
             throw new NoSuchPlayerException();
         }
-        if(id < 0){
+        if(id <= 0){
             throw new IncorrectPlayerArguments();
         }
         playerDAO.deletePlayer(id);
