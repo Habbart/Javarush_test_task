@@ -16,7 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/rest")
-public class Controller {
+public class PlayerController {
 
     @Autowired
     private PlayerService playerService;
@@ -33,8 +33,7 @@ public class Controller {
 
     @PostMapping("/players")
     public Player createPlayer(@RequestBody Player player){
-        playerService.createPlayer(player);
-        return playerService.getPlayerById(player.getId());
+        return playerService.createPlayer(player);
     }
 
     @PostMapping("/players/{id}")

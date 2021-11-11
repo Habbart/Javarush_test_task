@@ -28,8 +28,7 @@ public class PlayerDAOImpl implements PlayerDAO{
     @Override
     @Transactional
     public Player createPlayer(Player player) {
-        entityManager.merge(player);
-        return entityManager.find(Player.class, player.getId());
+        return entityManager.merge(player);
     }
 
     @Override

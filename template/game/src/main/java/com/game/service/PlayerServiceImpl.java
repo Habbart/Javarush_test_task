@@ -25,16 +25,17 @@ public class PlayerServiceImpl implements PlayerService{
     @Autowired
     private PlayerDAO playerDAO;
 
+    //todo добавить логгер
+
     @Override
     public List<Player> getAllPlayers(Map<String, String> params) {
         params.entrySet().forEach(System.out::println);
-        //todo все еще доделать фильтрацию
         int pageNumber = 0;
         int pageSize = 3;
         List<Player> allPlayersList = playerDAO.getAllPlayers();
         if(params == null) return allPlayersList.subList(0, 3);
 
-        System.out.println("метод гетАлл список до фильтрации");
+        //System.out.println("метод гетАлл список до фильтрации");
         printList(allPlayersList);
         Predicate<Player> filter = filterByParams(params).stream().reduce(Predicate::and).orElse(x -> true);
         //фильтруем лист в соответствии с предикатами
@@ -100,19 +101,19 @@ public class PlayerServiceImpl implements PlayerService{
 
     @Override
     public Player createPlayer(Player player) {
-        if(!isPlayerValid(player)) {
-            throw new IncorrectPlayerArguments();
-        }
+        isPlayerValid(player);
         calculateLevelAndUntilNextLevel(player);
         return playerDAO.createPlayer(player);
     }
 
     @Override
     public Player updatePlayer(long id, Player player) {
-        if(id <= 0) throw new IncorrectPlayerArguments();
+        if(id <= 0) throw new IncorrectPlayerArguments("incorrect id");
+        checkExperienceOfPlayer(player);
+        checkBirthdayOfPlayer(player);
         player.setId(id);
         Player playerFromDB = playerDAO.getPlayerById(id);
-        if(playerFromDB == null) throw new NoSuchPlayerException();
+        if(playerFromDB == null) throw new NoSuchPlayerException(String.format("player with this id: %d not found", id));
         Player playerForUpdate = mergePlayers(player, playerFromDB);
         calculateLevelAndUntilNextLevel(playerForUpdate);
         return playerDAO.createPlayer(playerForUpdate);
@@ -120,49 +121,60 @@ public class PlayerServiceImpl implements PlayerService{
 
     @Override
     public Player getPlayerById(long id) {
+        if(id <= 0 ){
+            throw new IncorrectPlayerArguments("incorrect id");
+        }
+        if(playerDAO.getPlayerById(id) == null) throw new NoSuchPlayerException(String.format("player with this id: %d not found", id));
         return playerDAO.getPlayerById(id);
     }
 
     @Override
     public void deletePlayer(long id) {
-        if(getPlayerById(id) == null){
-            throw new NoSuchPlayerException();
-        }
         if(id <= 0){
-            throw new IncorrectPlayerArguments();
+            throw new IncorrectPlayerArguments("incorrect id");
+        }
+        if(getPlayerById(id) == null ){
+            throw new NoSuchPlayerException(String.format("player with this id: %d not found", id));
         }
         playerDAO.deletePlayer(id);
     }
 
 
-    private boolean isPlayerValid(Player player){
+    private void isPlayerValid(Player player){
         if(player.getName() == null || player.getName().length() > 12) {
-            return false;
+            throw new IncorrectPlayerArguments("incorrect name");
         }
         if(player.getTitle()== null || player.getTitle().length() > 30) {
-            return false;
+            throw new IncorrectPlayerArguments("incorrect title");
         }
         if(player.getName().length() == 0 || player.getName() == "") {
-            return false;
+            throw new IncorrectPlayerArguments("incorrect name length or title length");
         }
         if(player.getProfession() == null) {
-            return false;
+            throw new IncorrectPlayerArguments("incorrect profession");
         }
         if(player.getRace() == null) {
-            return false;
+            throw new IncorrectPlayerArguments("incorrect race");
         }
+        checkExperienceOfPlayer(player);
+        checkBirthdayOfPlayer(player);
+    }
 
+    private void checkExperienceOfPlayer (Player player){
+        if(player.getExperience() == null) throw new IncorrectPlayerArguments("incorrect experience");
         if( player.getExperience() <0 || player.getExperience() > 10_000_000L) {
-            return false;
+            throw new IncorrectPlayerArguments("incorrect experience");
         }
+    }
+
+    private void checkBirthdayOfPlayer(Player player){
         Date playerBirthday = player.getBirthday();
-        if(playerBirthday == null) return false;
+        if(playerBirthday == null)  throw new IncorrectPlayerArguments("incorrect player birthday");
         Date afterDate = new Date(1100, 01 ,01);
         Date beforeDate = new Date(100, 01 ,01);
         if(playerBirthday.after(afterDate) || playerBirthday.before(beforeDate))  {
-            return false;
+            throw new IncorrectPlayerArguments("incorrect player birthday");
         }
-        return true;
     }
 
     private List<Predicate<Player>> filterByParams(Map<String, String> params){
@@ -211,7 +223,7 @@ public class PlayerServiceImpl implements PlayerService{
         };
         Predicate<Player> bannedPredicate = s -> {
             if(!params.containsKey("banned")) return true;
-            return s.isBanned();
+            return !s.isBanned(); //todo доделать фильтрацию
         };
         allPredicates.addAll(Arrays.asList(namePredicate, titlePredicate, racePredicate, professionPredicate, afterPredicate, beforePredicate, minExperiencePredicate, maxExperiencePredicate, minLevelPredicate, maxLevelPredicate, bannedPredicate));
         return allPredicates;
