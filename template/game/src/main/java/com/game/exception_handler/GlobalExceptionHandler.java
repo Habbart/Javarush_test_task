@@ -10,12 +10,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler
-    public ResponseEntity<HttpStatus> handleException(IncorrectPlayerArguments exception){
-        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    public ResponseEntity<String> handleException(IncorrectPlayerArguments exception){
+        return new ResponseEntity<>(exception.getMessage(),  HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler
-    public ResponseEntity<HttpStatus> handleException(NoSuchPlayerException exception){
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    public ResponseEntity<String> handleException(NoSuchPlayerException exception){
+        return new ResponseEntity<>(exception.getMessage(), HttpStatus.NOT_FOUND);
     }
 }

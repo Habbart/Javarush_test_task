@@ -23,6 +23,8 @@ public class PlayerController {
 
     @GetMapping("/players")
     public List<Player> getAllPlayers(@RequestParam(required = false) Map<String, String> params){
+        System.out.println(params.getClass());
+        //params.entrySet().forEach(System.out::println);
         return playerService.getAllPlayers(params);
     }
 

@@ -33,7 +33,6 @@ public class PlayerServiceImpl implements PlayerService{
         int pageNumber = 0;
         int pageSize = 3;
         List<Player> allPlayersList = playerDAO.getAllPlayers();
-        if(params == null) return allPlayersList.subList(0, 3);
 
         //System.out.println("метод гетАлл список до фильтрации");
         printList(allPlayersList);
@@ -147,7 +146,7 @@ public class PlayerServiceImpl implements PlayerService{
         if(player.getTitle()== null || player.getTitle().length() > 30) {
             throw new IncorrectPlayerArguments("incorrect title");
         }
-        if(player.getName().length() == 0 || player.getName() == "") {
+        if(player.getName().length() == 0 || player.getName().equals("")) {
             throw new IncorrectPlayerArguments("incorrect name length or title length");
         }
         if(player.getProfession() == null) {
@@ -181,11 +180,11 @@ public class PlayerServiceImpl implements PlayerService{
         List<Predicate<Player>> allPredicates = new ArrayList<>();
 
         Predicate<Player> namePredicate = s -> {
-            if(!params.containsKey("name") || params.get("name") == "") return true;
+            if(!params.containsKey("name") || params.get("name").equals("")) return true;
             return s.getName().contains(params.get("name"));
         };
         Predicate<Player> titlePredicate = s -> {
-            if(!params.containsKey("title") || params.get("title") == "") return true;
+            if(!params.containsKey("title") || params.get("title").equals("")) return true;
             return s.getTitle().contains(params.get("title"));
         };
 
@@ -198,32 +197,33 @@ public class PlayerServiceImpl implements PlayerService{
             return s.getProfession().equals(Profession.valueOf(params.get("profession")));
         };
         Predicate<Player> afterPredicate = s -> {
-            if(!params.containsKey("after") || params.get("after") == "") return true;
+            if(!params.containsKey("after") || params.get("after").equals("")) return true;
             return s.getBirthday().after(new Date(Long.parseLong(params.get("after"))));
         };
         Predicate<Player> beforePredicate = s -> {
-            if(!params.containsKey("before") || params.get("before") == "") return true;
+            if(!params.containsKey("before") || params.get("before").equals("")) return true;
             return s.getBirthday().before(new Date(Long.parseLong(params.get("before"))));
         };
         Predicate<Player> minExperiencePredicate = s -> {
-            if(!params.containsKey("minExperience") || params.get("minExperience") == "") return true;
+            if(!params.containsKey("minExperience") || params.get("minExperience").equals("")) return true;
             return s.getExperience() >= Integer.parseInt(params.get("minExperience"));
         };
         Predicate<Player> maxExperiencePredicate = s -> {
-            if(!params.containsKey("maxExperience") || params.get("maxExperience") == "") return true;
+            if(!params.containsKey("maxExperience") || params.get("maxExperience").equals("")) return true;
             return s.getExperience() <= Integer.parseInt(params.get("maxExperience"));
         };
         Predicate<Player> minLevelPredicate = s -> {
-            if(!params.containsKey("minLevel") || params.get("minLevel") == "") return true;
+            if(!params.containsKey("minLevel") || params.get("minLevel").equals("")) return true;
             return s.getLevel() >= Integer.parseInt(params.get("minLevel"));
         };
         Predicate<Player> maxLevelPredicate = s -> {
-            if(!params.containsKey("maxLevel") || params.get("maxLevel") == "") return true;
+            if(!params.containsKey("maxLevel") || params.get("maxLevel").equals("")) return true;
             return s.getLevel() <= Integer.parseInt(params.get("maxLevel"));
         };
         Predicate<Player> bannedPredicate = s -> {
             if(!params.containsKey("banned")) return true;
-            return !s.isBanned(); //todo доделать фильтрацию
+
+            return s.isBanned().equals(Boolean.parseBoolean(params.get("banned")));
         };
         allPredicates.addAll(Arrays.asList(namePredicate, titlePredicate, racePredicate, professionPredicate, afterPredicate, beforePredicate, minExperiencePredicate, maxExperiencePredicate, minLevelPredicate, maxLevelPredicate, bannedPredicate));
         return allPredicates;
@@ -233,8 +233,8 @@ public class PlayerServiceImpl implements PlayerService{
     private Player mergePlayers(Player playerFromJSON, Player playerFromDB){
         Player resultPlayer = new Player();
         resultPlayer.setId(playerFromJSON.getId());
-        resultPlayer.setName(playerFromJSON.getName() == null? playerFromDB.getName() : playerFromJSON.getName());
-        resultPlayer.setTitle(playerFromJSON.getTitle() == null? playerFromDB.getTitle() : playerFromJSON.getTitle());
+        resultPlayer.setName(playerFromJSON.getName().isEmpty() ? playerFromDB.getName() : playerFromJSON.getName());
+        resultPlayer.setTitle(playerFromJSON.getTitle().isEmpty()? playerFromDB.getTitle() : playerFromJSON.getTitle());
         resultPlayer.setRace(playerFromJSON.getRace() == null? playerFromDB.getRace() : playerFromJSON.getRace());
         resultPlayer.setProfession(playerFromJSON.getProfession() == null? playerFromDB.getProfession() : playerFromJSON.getProfession());
         resultPlayer.setBirthday(playerFromJSON.getBirthday() == null? playerFromDB.getBirthday() : playerFromJSON.getBirthday());
