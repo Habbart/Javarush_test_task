@@ -29,18 +29,12 @@ public class PlayerServiceImpl implements PlayerService{
 
     @Override
     public List<Player> getAllPlayers(Map<String, String> params) {
-        params.entrySet().forEach(System.out::println);
         int pageNumber = 0;
         int pageSize = 3;
         List<Player> allPlayersList = playerDAO.getAllPlayers();
-
-        //System.out.println("метод гетАлл список до фильтрации");
-        printList(allPlayersList);
         Predicate<Player> filter = filterByParams(params).stream().reduce(Predicate::and).orElse(x -> true);
         //фильтруем лист в соответствии с предикатами
         allPlayersList = allPlayersList.stream().filter(filter).collect(Collectors.toList());
-        System.out.println("метод гетАлл список после фильтрации до сортировки");
-        printList(allPlayersList);
         //проверяем в каком порядке должен быть отсрортирован лист
         Function<List<Player>, List<Player>> sortForList = s -> {
             if(!params.containsKey("order")) {
@@ -63,8 +57,6 @@ public class PlayerServiceImpl implements PlayerService{
             return s;
         };
         allPlayersList = sortForList.apply(allPlayersList);
-        //System.out.println("метод гетАлл список после фильтрации и сортировки");
-        //printList(allPlayersList);
         if(params.containsKey("pageNumber")){
             pageNumber = Integer.parseInt(params.get("pageNumber"));
         }
@@ -77,16 +69,10 @@ public class PlayerServiceImpl implements PlayerService{
             endOfSublist = startOfSublist + allPlayersList.size() - startOfSublist;
         }
         allPlayersList = allPlayersList.subList(startOfSublist, endOfSublist);
-        System.out.println("метод гетАлл список после Пагинации");
-        printList(allPlayersList);
+
         return allPlayersList;
 
 
-    }
-
-    private void printList(List<Player> list){
-        list.stream().map(s -> s.getName() + " ").forEach(System.out::print);
-        System.out.println();
     }
 
     @Override
@@ -160,7 +146,7 @@ public class PlayerServiceImpl implements PlayerService{
     }
 
     private void checkExperienceOfPlayer (Player player){
-        if(player.getExperience() == null) throw new IncorrectPlayerArguments("incorrect experience");
+        if(player.getExperience() == null) return;
         if( player.getExperience() <0 || player.getExperience() > 10_000_000L) {
             throw new IncorrectPlayerArguments("incorrect experience");
         }
@@ -168,7 +154,7 @@ public class PlayerServiceImpl implements PlayerService{
 
     private void checkBirthdayOfPlayer(Player player){
         Date playerBirthday = player.getBirthday();
-        if(playerBirthday == null)  throw new IncorrectPlayerArguments("incorrect player birthday");
+        if(playerBirthday == null)  return;
         Date afterDate = new Date(1100, 01 ,01);
         Date beforeDate = new Date(100, 01 ,01);
         if(playerBirthday.after(afterDate) || playerBirthday.before(beforeDate))  {
@@ -233,8 +219,8 @@ public class PlayerServiceImpl implements PlayerService{
     private Player mergePlayers(Player playerFromJSON, Player playerFromDB){
         Player resultPlayer = new Player();
         resultPlayer.setId(playerFromJSON.getId());
-        resultPlayer.setName(playerFromJSON.getName().isEmpty() ? playerFromDB.getName() : playerFromJSON.getName());
-        resultPlayer.setTitle(playerFromJSON.getTitle().isEmpty()? playerFromDB.getTitle() : playerFromJSON.getTitle());
+        resultPlayer.setName((playerFromJSON.getName() == null || playerFromJSON.getName().isEmpty()) ? playerFromDB.getName() : playerFromJSON.getName());
+        resultPlayer.setTitle((playerFromJSON.getTitle() == null || playerFromJSON.getTitle().isEmpty()) ? playerFromDB.getTitle() : playerFromJSON.getTitle());
         resultPlayer.setRace(playerFromJSON.getRace() == null? playerFromDB.getRace() : playerFromJSON.getRace());
         resultPlayer.setProfession(playerFromJSON.getProfession() == null? playerFromDB.getProfession() : playerFromJSON.getProfession());
         resultPlayer.setBirthday(playerFromJSON.getBirthday() == null? playerFromDB.getBirthday() : playerFromJSON.getBirthday());

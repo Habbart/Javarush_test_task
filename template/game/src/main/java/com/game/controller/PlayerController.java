@@ -4,12 +4,9 @@ package com.game.controller;
 import com.game.entity.Player;
 import com.game.service.PlayerService;
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 
-import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
@@ -18,13 +15,14 @@ import java.util.Map;
 @RequestMapping("/rest")
 public class PlayerController {
 
+
+
+
     @Autowired
     private PlayerService playerService;
 
     @GetMapping("/players")
     public List<Player> getAllPlayers(@RequestParam(required = false) Map<String, String> params){
-        System.out.println(params.getClass());
-        //params.entrySet().forEach(System.out::println);
         return playerService.getAllPlayers(params);
     }
 
