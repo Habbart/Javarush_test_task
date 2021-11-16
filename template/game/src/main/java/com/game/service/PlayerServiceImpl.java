@@ -2,14 +2,11 @@ package com.game.service;
 
 import com.game.controller.PlayerOrder;
 import com.game.entity.Player;
-import com.game.entity.Profession;
-import com.game.entity.Race;
 import com.game.exception_handler.IncorrectPlayerArguments;
 import com.game.exception_handler.NoSuchPlayerException;
 import com.game.repository.PlayerDAO;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.PersistenceContext;
@@ -25,22 +22,21 @@ public class PlayerServiceImpl implements PlayerService{
     @Autowired
     private PlayerDAO playerDAO;
 
-    //todo добавить логгер
-
     @Override
-    public List<Player> getAllPlayers(Map<String, String> params) {
+    public List<Player> getAllPlayers(PlayerPOJO playerPOJO) {
+        PlayerPojoCheck.validatePLayerPOJO(playerPOJO);
         int pageNumber = 0;
         int pageSize = 3;
         List<Player> allPlayersList = playerDAO.getAllPlayers();
-        Predicate<Player> filter = filterByParams(params).stream().reduce(Predicate::and).orElse(x -> true);
+        Predicate<Player> filter = filterByParamsFromPlayerPOJO(playerPOJO).stream().reduce(Predicate::and).orElse(x -> true);
         //фильтруем лист в соответствии с предикатами
         allPlayersList = allPlayersList.stream().filter(filter).collect(Collectors.toList());
         //проверяем в каком порядке должен быть отсрортирован лист
         Function<List<Player>, List<Player>> sortForList = s -> {
-            if(!params.containsKey("order")) {
+            if(playerPOJO.getOrder() == null) {
                 return s.stream().sorted((x, y) -> (Long.compare(x.getId(), y.getId()))).collect(Collectors.toList());
             } else {
-                PlayerOrder playerOrder = PlayerOrder.valueOf(params.get("order"));
+                PlayerOrder playerOrder = playerPOJO.getOrder();
                 switch (playerOrder) {
                     case NAME:
                         return s.stream().sorted((x, y) -> (x.getName().compareTo(y.getName()))).collect(Collectors.toList());
@@ -57,11 +53,11 @@ public class PlayerServiceImpl implements PlayerService{
             return s;
         };
         allPlayersList = sortForList.apply(allPlayersList);
-        if(params.containsKey("pageNumber")){
-            pageNumber = Integer.parseInt(params.get("pageNumber"));
+        if(playerPOJO.getPageNumber() != null){
+            pageNumber = playerPOJO.getPageNumber();
         }
-        if(params.containsKey("pageSize")){
-            pageSize = Integer.parseInt(params.get("pageSize"));
+        if(playerPOJO.getPageSize() != null){
+            pageSize = playerPOJO.getPageSize();
         }
         int startOfSublist = pageNumber*pageSize;
         int endOfSublist = (pageNumber*pageSize) + pageSize;
@@ -76,17 +72,18 @@ public class PlayerServiceImpl implements PlayerService{
     }
 
     @Override
-    public int getCountOfPlayers(Map<String, String> params) {
-        if (params == null) return playerDAO.getAllPlayers().size();
+    public int getCountOfPlayers(PlayerPOJO playerPOJO) {
+        PlayerPojoCheck.validatePLayerPOJO(playerPOJO);
+        if (playerPOJO.isEmpty()) return playerDAO.getAllPlayers().size();
         List<Player> allPlayersList = playerDAO.getAllPlayers();
-        Predicate<Player> filter = filterByParams(params).stream().reduce(Predicate::and).orElse(x -> true);
+        Predicate<Player> filter = filterByParamsFromPlayerPOJO(playerPOJO).stream().reduce(Predicate::and).orElse(x -> true);
         allPlayersList = allPlayersList.stream().filter(filter).collect(Collectors.toList());
         return allPlayersList.size();
     }
 
     @Override
     public Player createPlayer(Player player) {
-        isPlayerValid(player);
+        PlayerPojoCheck.isPlayerValid(player);
         calculateLevelAndUntilNextLevel(player);
         return playerDAO.createPlayer(player);
     }
@@ -94,8 +91,8 @@ public class PlayerServiceImpl implements PlayerService{
     @Override
     public Player updatePlayer(long id, Player player) {
         if(id <= 0) throw new IncorrectPlayerArguments("incorrect id");
-        checkExperienceOfPlayer(player);
-        checkBirthdayOfPlayer(player);
+        PlayerPojoCheck.checkExperienceOfPlayer(player);
+        PlayerPojoCheck.checkBirthdayOfPlayer(player);
         player.setId(id);
         Player playerFromDB = playerDAO.getPlayerById(id);
         if(playerFromDB == null) throw new NoSuchPlayerException(String.format("player with this id: %d not found", id));
@@ -125,91 +122,53 @@ public class PlayerServiceImpl implements PlayerService{
     }
 
 
-    private void isPlayerValid(Player player){
-        if(player.getName() == null || player.getName().length() > 12) {
-            throw new IncorrectPlayerArguments("incorrect name");
-        }
-        if(player.getTitle()== null || player.getTitle().length() > 30) {
-            throw new IncorrectPlayerArguments("incorrect title");
-        }
-        if(player.getName().length() == 0 || player.getName().equals("")) {
-            throw new IncorrectPlayerArguments("incorrect name length or title length");
-        }
-        if(player.getProfession() == null) {
-            throw new IncorrectPlayerArguments("incorrect profession");
-        }
-        if(player.getRace() == null) {
-            throw new IncorrectPlayerArguments("incorrect race");
-        }
-        checkExperienceOfPlayer(player);
-        checkBirthdayOfPlayer(player);
-    }
-
-    private void checkExperienceOfPlayer (Player player){
-        if(player.getExperience() == null) return;
-        if( player.getExperience() <0 || player.getExperience() > 10_000_000L) {
-            throw new IncorrectPlayerArguments("incorrect experience");
-        }
-    }
-
-    private void checkBirthdayOfPlayer(Player player){
-        Date playerBirthday = player.getBirthday();
-        if(playerBirthday == null)  return;
-        Date afterDate = new Date(1100, 01 ,01);
-        Date beforeDate = new Date(100, 01 ,01);
-        if(playerBirthday.after(afterDate) || playerBirthday.before(beforeDate))  {
-            throw new IncorrectPlayerArguments("incorrect player birthday");
-        }
-    }
-
-    private List<Predicate<Player>> filterByParams(Map<String, String> params){
+    private List<Predicate<Player>> filterByParamsFromPlayerPOJO(PlayerPOJO playerPOJO){
         List<Predicate<Player>> allPredicates = new ArrayList<>();
 
         Predicate<Player> namePredicate = s -> {
-            if(!params.containsKey("name") || params.get("name").equals("")) return true;
-            return s.getName().contains(params.get("name"));
+            if(playerPOJO.getName() == null || !playerPOJO.getName().isEmpty()) return true;
+            return s.getName().contains(playerPOJO.getName());
         };
         Predicate<Player> titlePredicate = s -> {
-            if(!params.containsKey("title") || params.get("title").equals("")) return true;
-            return s.getTitle().contains(params.get("title"));
+            if(playerPOJO.getTitle() == null || !playerPOJO.getTitle().isEmpty()) return true;
+            return s.getName().contains(playerPOJO.getTitle());
         };
 
         Predicate<Player> racePredicate = s -> {
-            if(!params.containsKey("race")) return true;
-            return s.getRace().equals(Race.valueOf(params.get("race")));
+            if(playerPOJO.getRace() == null) return true;
+            return s.getRace().equals(playerPOJO.getRace());
         };
         Predicate<Player> professionPredicate = s -> {
-            if(!params.containsKey("profession")) return true;
-            return s.getProfession().equals(Profession.valueOf(params.get("profession")));
+            if(playerPOJO.getProfession() == null) return true;
+            return s.getProfession().equals(playerPOJO.getProfession());
         };
         Predicate<Player> afterPredicate = s -> {
-            if(!params.containsKey("after") || params.get("after").equals("")) return true;
-            return s.getBirthday().after(new Date(Long.parseLong(params.get("after"))));
+            if(playerPOJO.getAfter() == null ) return true;
+            return s.getBirthday().after(playerPOJO.getAfter());
         };
         Predicate<Player> beforePredicate = s -> {
-            if(!params.containsKey("before") || params.get("before").equals("")) return true;
-            return s.getBirthday().before(new Date(Long.parseLong(params.get("before"))));
+            if(playerPOJO.getBefore() == null) return true;
+            return s.getBirthday().before(playerPOJO.getBefore());
         };
         Predicate<Player> minExperiencePredicate = s -> {
-            if(!params.containsKey("minExperience") || params.get("minExperience").equals("")) return true;
-            return s.getExperience() >= Integer.parseInt(params.get("minExperience"));
+            if(playerPOJO.getMinExperience() == null) return true;
+            return s.getExperience() >= playerPOJO.getMinExperience();
         };
         Predicate<Player> maxExperiencePredicate = s -> {
-            if(!params.containsKey("maxExperience") || params.get("maxExperience").equals("")) return true;
-            return s.getExperience() <= Integer.parseInt(params.get("maxExperience"));
+            if(playerPOJO.getMaxExperience() == null) return true;
+            return s.getExperience() <= playerPOJO.getMaxExperience();
         };
         Predicate<Player> minLevelPredicate = s -> {
-            if(!params.containsKey("minLevel") || params.get("minLevel").equals("")) return true;
-            return s.getLevel() >= Integer.parseInt(params.get("minLevel"));
+            if(playerPOJO.getMinLevel() == null) return true;
+            return s.getLevel() >= playerPOJO.getMinLevel();
         };
         Predicate<Player> maxLevelPredicate = s -> {
-            if(!params.containsKey("maxLevel") || params.get("maxLevel").equals("")) return true;
-            return s.getLevel() <= Integer.parseInt(params.get("maxLevel"));
+            if(playerPOJO.getMaxLevel() == null) return true;
+            return s.getLevel() <= playerPOJO.getMaxLevel();
         };
         Predicate<Player> bannedPredicate = s -> {
-            if(!params.containsKey("banned")) return true;
-
-            return s.isBanned().equals(Boolean.parseBoolean(params.get("banned")));
+            if(playerPOJO.getBanned() == null) return true;
+            return s.isBanned().equals(playerPOJO.getBanned());
         };
         allPredicates.addAll(Arrays.asList(namePredicate, titlePredicate, racePredicate, professionPredicate, afterPredicate, beforePredicate, minExperiencePredicate, maxExperiencePredicate, minLevelPredicate, maxLevelPredicate, bannedPredicate));
         return allPredicates;

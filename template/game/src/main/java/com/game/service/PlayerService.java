@@ -7,7 +7,7 @@ import java.util.Map;
 
 public interface PlayerService {
 
-    List<Player> getAllPlayers(Map<String, String> params);
+    List<Player> getAllPlayers(PlayerPOJO playerPOJO);
 
     Player createPlayer(Player player);
 
@@ -17,5 +17,5 @@ public interface PlayerService {
 
     void deletePlayer(long id);
 
-    int getCountOfPlayers(Map<String, String> params);
+    int getCountOfPlayers(PlayerPOJO playerPOJO);
 }
