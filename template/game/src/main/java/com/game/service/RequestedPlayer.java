@@ -7,7 +7,7 @@ import com.game.entity.Race;
 import java.util.Date;
 
 
-public class PlayerPOJO {
+public final class RequestedPlayer {
 
     private String name;
     private String title;
@@ -24,21 +24,13 @@ public class PlayerPOJO {
     private Integer pageNumber;
     private Integer pageSize;
 
-    public PlayerPOJO(String name, String title, Race race, Profession profession, Long after, Long before, Boolean banned, Integer minExperience, Integer maxExperience, Integer minLevel, Integer maxLevel, PlayerOrder order, Integer pageNumber, Integer pageSize) {
+    public RequestedPlayer(String name, String title, Race race, Profession profession, Long after, Long before, Boolean banned, Integer minExperience, Integer maxExperience, Integer minLevel, Integer maxLevel, PlayerOrder order, Integer pageNumber, Integer pageSize) {
         this.name = name;
         this.title = title;
         this.race = race;
         this.profession = profession;
-        if(after == null){
-            this.after = null;
-        } else {
-            this.after = new Date(after);
-        }
-        if(before == null){
-            this.before = null;
-        } else {
-            this.before = new Date(before);
-        }
+        this.after = after == null ? null :  new Date(after);
+        this.before = before == null ? null :  new Date(before);
         this.banned = banned;
         this.minExperience = minExperience;
         this.maxExperience = maxExperience;
@@ -49,21 +41,13 @@ public class PlayerPOJO {
         this.pageSize = pageSize;
     }
 
-    public PlayerPOJO(String name, String title, Race race, Profession profession, Long after, Long before, Boolean banned, Integer minExperience, Integer maxExperience, Integer minLevel, Integer maxLevel) {
+    public RequestedPlayer(String name, String title, Race race, Profession profession, Long after, Long before, Boolean banned, Integer minExperience, Integer maxExperience, Integer minLevel, Integer maxLevel) {
         this.name = name;
         this.title = title;
         this.race = race;
         this.profession = profession;
-        if(after == null){
-            this.after = null;
-        } else {
-            this.after = new Date(after);
-        }
-        if(before == null){
-            this.before = null;
-        } else {
-            this.before = new Date(before);
-        }
+        this.after = after == null ? null :  new Date(after);
+        this.before = before == null ? null :  new Date(before);
         this.banned = banned;
         this.minExperience = minExperience;
         this.maxExperience = maxExperience;
@@ -71,7 +55,7 @@ public class PlayerPOJO {
         this.maxLevel = maxLevel;
     }
 
-    public PlayerPOJO() {
+    public RequestedPlayer() {
     }
 
     public String getName() {

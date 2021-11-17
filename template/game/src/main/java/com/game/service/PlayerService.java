@@ -3,11 +3,10 @@ package com.game.service;
 import com.game.entity.Player;
 
 import java.util.List;
-import java.util.Map;
 
 public interface PlayerService {
 
-    List<Player> getAllPlayers(PlayerPOJO playerPOJO);
+    List<Player> getAllPlayers(RequestedPlayer requestedPlayer);
 
     Player createPlayer(Player player);
 
@@ -17,5 +16,5 @@ public interface PlayerService {
 
     void deletePlayer(long id);
 
-    int getCountOfPlayers(PlayerPOJO playerPOJO);
+    int getCountOfPlayers(RequestedPlayer requestedPlayer);
 }

@@ -8,9 +8,6 @@ import java.util.Date;
 public class Validator {
 
 
-    public static void validatePLayerPOJO(PlayerPOJO playerPOJO) {
-    }
-
     public static void isPlayerValid(Player player){
         if(player.getName() == null || player.getName().length() > 12) {
             throw new IncorrectPlayerArguments("incorrect name");
