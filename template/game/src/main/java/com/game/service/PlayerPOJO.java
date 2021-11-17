@@ -24,9 +24,9 @@ public class PlayerPOJO {
     private Integer pageNumber;
     private Integer pageSize;
 
-    public PlayerPOJO(String name, String getTitle, Race race, Profession profession, Long after, Long before, Boolean banned, Integer minExperience, Integer maxExperience, Integer minLevel, Integer maxLevel, PlayerOrder order, Integer pageNumber, Integer pageSize) {
+    public PlayerPOJO(String name, String title, Race race, Profession profession, Long after, Long before, Boolean banned, Integer minExperience, Integer maxExperience, Integer minLevel, Integer maxLevel, PlayerOrder order, Integer pageNumber, Integer pageSize) {
         this.name = name;
-        this.title = getTitle;
+        this.title = title;
         this.race = race;
         this.profession = profession;
         if(after == null){
@@ -49,9 +49,9 @@ public class PlayerPOJO {
         this.pageSize = pageSize;
     }
 
-    public PlayerPOJO(String name, String getTitle, Race race, Profession profession, Long after, Long before, Boolean banned, Integer minExperience, Integer maxExperience, Integer minLevel, Integer maxLevel) {
+    public PlayerPOJO(String name, String title, Race race, Profession profession, Long after, Long before, Boolean banned, Integer minExperience, Integer maxExperience, Integer minLevel, Integer maxLevel) {
         this.name = name;
-        this.title = getTitle;
+        this.title = title;
         this.race = race;
         this.profession = profession;
         if(after == null){
@@ -194,4 +194,23 @@ public class PlayerPOJO {
 
     }
 
+    @Override
+    public String toString() {
+        return "PlayerPOJO{" +
+                "name='" + name + '\'' +
+                ", title='" + title + '\'' +
+                ", race=" + race +
+                ", profession=" + profession +
+                ", after=" + after +
+                ", before=" + before +
+                ", banned=" + banned +
+                ", minExperience=" + minExperience +
+                ", maxExperience=" + maxExperience +
+                ", minLevel=" + minLevel +
+                ", maxLevel=" + maxLevel +
+                ", order=" + order +
+                ", pageNumber=" + pageNumber +
+                ", pageSize=" + pageSize +
+                '}';
+    }
 }

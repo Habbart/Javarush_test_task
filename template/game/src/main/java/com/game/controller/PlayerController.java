@@ -11,13 +11,16 @@ import org.springframework.web.bind.annotation.*;
 
 
 import java.util.List;
-import java.util.Map;
 
 
 @RestController
 @RequestMapping("/rest")
 public class PlayerController {
 
+
+    public static final String NAME = "name";
+    public static final String TITLE = "name";
+    public static final String RACE = "name";
 
 
 

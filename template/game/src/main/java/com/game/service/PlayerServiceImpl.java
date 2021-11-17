@@ -24,14 +24,17 @@ public class PlayerServiceImpl implements PlayerService{
 
     @Override
     public List<Player> getAllPlayers(PlayerPOJO playerPOJO) {
-        PlayerPojoCheck.validatePLayerPOJO(playerPOJO);
-        int pageNumber = 0;
-        int pageSize = 3;
+//        System.out.println(playerPOJO);
+        Validator.validatePLayerPOJO(playerPOJO);
         List<Player> allPlayersList = playerDAO.getAllPlayers();
+//        System.out.println("все игроки: ");
+//        print(allPlayersList);
         Predicate<Player> filter = filterByParamsFromPlayerPOJO(playerPOJO).stream().reduce(Predicate::and).orElse(x -> true);
         //фильтруем лист в соответствии с предикатами
         allPlayersList = allPlayersList.stream().filter(filter).collect(Collectors.toList());
         //проверяем в каком порядке должен быть отсрортирован лист
+//        System.out.println("лист после фильтрации: ");
+//        print(allPlayersList);
         Function<List<Player>, List<Player>> sortForList = s -> {
             if(playerPOJO.getOrder() == null) {
                 return s.stream().sorted((x, y) -> (Long.compare(x.getId(), y.getId()))).collect(Collectors.toList());
@@ -53,6 +56,11 @@ public class PlayerServiceImpl implements PlayerService{
             return s;
         };
         allPlayersList = sortForList.apply(allPlayersList);
+//        System.out.println("лист после порядка: ");
+//        print(allPlayersList);
+        //проверяем была ли передана пагинация и ограничиваем лист в соответствии с ней
+        int pageNumber = 0;
+        int pageSize = 3;
         if(playerPOJO.getPageNumber() != null){
             pageNumber = playerPOJO.getPageNumber();
         }
@@ -65,7 +73,9 @@ public class PlayerServiceImpl implements PlayerService{
             endOfSublist = startOfSublist + allPlayersList.size() - startOfSublist;
         }
         allPlayersList = allPlayersList.subList(startOfSublist, endOfSublist);
-
+        allPlayersList = sortForList.apply(allPlayersList);
+//        System.out.println("лист после пагинации: ");
+//        print(allPlayersList);
         return allPlayersList;
 
 
@@ -73,7 +83,7 @@ public class PlayerServiceImpl implements PlayerService{
 
     @Override
     public int getCountOfPlayers(PlayerPOJO playerPOJO) {
-        PlayerPojoCheck.validatePLayerPOJO(playerPOJO);
+        Validator.validatePLayerPOJO(playerPOJO);
         if (playerPOJO.isEmpty()) return playerDAO.getAllPlayers().size();
         List<Player> allPlayersList = playerDAO.getAllPlayers();
         Predicate<Player> filter = filterByParamsFromPlayerPOJO(playerPOJO).stream().reduce(Predicate::and).orElse(x -> true);
@@ -83,16 +93,16 @@ public class PlayerServiceImpl implements PlayerService{
 
     @Override
     public Player createPlayer(Player player) {
-        PlayerPojoCheck.isPlayerValid(player);
+        Validator.isPlayerValid(player);
         calculateLevelAndUntilNextLevel(player);
         return playerDAO.createPlayer(player);
     }
 
     @Override
     public Player updatePlayer(long id, Player player) {
-        if(id <= 0) throw new IncorrectPlayerArguments("incorrect id");
-        PlayerPojoCheck.checkExperienceOfPlayer(player);
-        PlayerPojoCheck.checkBirthdayOfPlayer(player);
+        Validator.checkId(id);
+        Validator.checkExperienceOfPlayer(player);
+        Validator.checkBirthdayOfPlayer(player);
         player.setId(id);
         Player playerFromDB = playerDAO.getPlayerById(id);
         if(playerFromDB == null) throw new NoSuchPlayerException(String.format("player with this id: %d not found", id));
@@ -103,22 +113,20 @@ public class PlayerServiceImpl implements PlayerService{
 
     @Override
     public Player getPlayerById(long id) {
-        if(id <= 0 ){
-            throw new IncorrectPlayerArguments("incorrect id");
-        }
+        Validator.checkId(id);
         if(playerDAO.getPlayerById(id) == null) throw new NoSuchPlayerException(String.format("player with this id: %d not found", id));
         return playerDAO.getPlayerById(id);
     }
 
     @Override
     public void deletePlayer(long id) {
-        if(id <= 0){
-            throw new IncorrectPlayerArguments("incorrect id");
-        }
-        if(getPlayerById(id) == null ){
-            throw new NoSuchPlayerException(String.format("player with this id: %d not found", id));
-        }
+        Validator.checkId(id);
         playerDAO.deletePlayer(id);
+    }
+
+    private void print(List<Player> playerList){
+        playerList.forEach(s -> System.out.print(s.getName() + " "+ s.getTitle()));
+        System.out.println();
     }
 
 
@@ -126,12 +134,12 @@ public class PlayerServiceImpl implements PlayerService{
         List<Predicate<Player>> allPredicates = new ArrayList<>();
 
         Predicate<Player> namePredicate = s -> {
-            if(playerPOJO.getName() == null || !playerPOJO.getName().isEmpty()) return true;
+            if(playerPOJO.getName() == null || playerPOJO.getName().isEmpty()) return true;
             return s.getName().contains(playerPOJO.getName());
         };
         Predicate<Player> titlePredicate = s -> {
-            if(playerPOJO.getTitle() == null || !playerPOJO.getTitle().isEmpty()) return true;
-            return s.getName().contains(playerPOJO.getTitle());
+            if(playerPOJO.getTitle() == null || playerPOJO.getTitle().isEmpty()) return true;
+            return s.getTitle().contains(playerPOJO.getTitle());
         };
 
         Predicate<Player> racePredicate = s -> {

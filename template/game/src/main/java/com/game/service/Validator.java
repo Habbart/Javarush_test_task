@@ -5,7 +5,7 @@ import com.game.exception_handler.IncorrectPlayerArguments;
 
 import java.util.Date;
 
-public class PlayerPojoCheck {
+public class Validator {
 
 
     public static void validatePLayerPOJO(PlayerPOJO playerPOJO) {
@@ -47,4 +47,12 @@ public class PlayerPojoCheck {
             throw new IncorrectPlayerArguments("incorrect player birthday");
         }
     }
+
+    public static void checkId(long id){
+        if(id <= 0){
+            throw new IncorrectPlayerArguments("incorrect id");
+        }
+    }
+
+
 }
