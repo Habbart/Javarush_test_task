@@ -1,5 +1,5 @@
 # Технологии проекта:
-## Spring MVC, Maven, Hibernate, Git.
+## Spring MVC, Maven, Hibernate, Git, mockito, JUnit, Apache Tomcat
 
 ## Задание:
 Нужно дописать приложение для администратора сетевой ролевой игры, где он сможет редактировать
